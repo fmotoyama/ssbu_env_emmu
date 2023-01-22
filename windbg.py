@@ -298,13 +298,10 @@ def get_all_process():
 
 
 def get_pids(name):
-    """nameのPIDを全て返す"""
+    """nameのPIDを全て、ソートして返す"""
     df = get_all_process()
-    df2 = df[df['イメージ名'] == name]
-    
-    if len(df2) == 0:
-        print(f'not found "{name}" PID')
-        return
+    df2 = df[df['イメージ名'] == name].sort_values('PID')
+    assert len(df2), f'not found "{name}" PID'
     return df2['PID'].tolist()
 
 

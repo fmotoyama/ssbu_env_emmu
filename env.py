@@ -56,7 +56,6 @@ class Env_param:
         # [0,1]
         self.stick_shift = K.shift
         
-        #self.action_shape = len(self.bottun_list) * len(self.stick_list)
         self.action_shape = (len(self.bottun_list),len(self.stick_list),2)
 
 
