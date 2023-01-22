@@ -6,9 +6,9 @@ Created on Sun Feb  7 14:49:23 2021
 """
 import struct
 
-import os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
-import windbg, config
+#import os, sys
+#sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
+from . import windbg, config
 
 
 class ReadMemory:

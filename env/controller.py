@@ -7,9 +7,7 @@ Created on Sat May 21 19:32:52 2022
 import win32api, win32con
 import time
 
-import os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
-import windbg
+from . import windbg
 
 class KeyValue:
     N       = 0,
