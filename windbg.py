@@ -9,8 +9,8 @@ import subprocess, re, array
 import pandas as pd
 import ctypes, win32gui
 
-#import os, sys
-#sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 import defines as d
 
 

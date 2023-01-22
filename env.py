@@ -7,8 +7,8 @@ Created on Tue May 24 16:15:17 2022
 import time
 import numpy as np
 
-#import os, sys
-#sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 import windbg
 from read_memory import ReadMemory
 from controller import Controller
@@ -239,7 +239,7 @@ if __name__ == '__main__':
         infos = [info for info in infos_all if 'yuzu ' in info[0]]  #ウィンドウ名先頭5文字でyuzuを特定
         for info in infos:
             wName, wHandle, _ = info
-            m = re.search('__(\d+)$', wName)
+            m = re.search(r'__(\d+)$', wName)
             if m:
                 windbg.SetWindowText(wHandle, wName[:m.start()])
     
