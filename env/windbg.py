@@ -278,8 +278,11 @@ def get_memorymap(pHandle):
 def get_all_process():
     """実行中のプロセスの情報をまとめる"""
     proc = subprocess.Popen('tasklist', shell=True, stdout=subprocess.PIPE)
-    
     data = list(proc.stdout)
+    proc.stdout.close()
+    proc.kill()
+    proc.wait()
+    
     item = data[1].decode("sjis").split()
     item[-1] += '(K)'
     match = list(re.finditer(r'.*?(=+)', data[2].decode("utf-8"))) #'='の集合の検索
@@ -288,7 +291,7 @@ def get_all_process():
     for line in data[3:]:
         line = line.decode("utf-8")
         temp = [line[b[0]:b[1]] for b in boundary]
-        temp[4] = re.match('.*?(\d+)', temp[4]).group()     #数字の検索（Kの削除）
+        temp[4] = re.match(r'.*?(\d+)', temp[4]).group()     #数字の検索（Kの削除）
         plist.append(temp)
     
     df = pd.DataFrame(plist,columns=item)
