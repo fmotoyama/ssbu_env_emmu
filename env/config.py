@@ -7,8 +7,8 @@ Created on Tue Sep 21 22:59:38 2021
 
 
 #a_heapfree_chain = [0x52C2070,0x670], mymod1
-#ra_free = 0x392C64B4 + 0xc  # yuzu1022
-ra_free = 0x372C64B4 + 0xc  # yuzu1313
+ra_free = 0x392C64B4 + 0xc  # yuzu1022
+#ra_free = 0x372C64B4 + 0xc  # yuzu1313
 #前0x10と0x90が空き
 
 chains = {
