@@ -15,22 +15,7 @@ from .controller import Controller
 from .controller import KeyValue as K
 
 
-def get_emmu_Handles():
-    """開いている全てのエミュのウィンドウのpHandle,wcHandleを取得"""
-    pids = windbg.get_pids('yuzu.exe')
-    pHandles = [windbg.get_pHandle(pid) for pid in pids]
-    # wHandleの取得　info=[ウィンドウ名,wHandle,pid]
-    infos_all = windbg.EnumWindows()
-    infos = [info for info in infos_all if 'yuzu ' in info[0]]  # ウィンドウ名先頭5文字でyuzuを特定
-    # wcHandleを取得し、pidでpHandleと対応づける
-    Handles = []
-    for wName,wHandle,pid in infos:
-        pHandle = pHandles[pids.index(pid)]
-        wcHandle = windbg.EnumChildWindows(wHandle)[3]  # yuzu1022:3
-        #wcHandle = windbg.EnumChildWindows(wHandle)[4]  # yuzu1268:4
-        windbg.SetWindowText(wHandle, wName + '__' + str(pids.index(pid)))
-        Handles.append((pHandle,wcHandle))
-    return Handles
+
 
 
 
@@ -61,17 +46,36 @@ class Env_param:
 
 
 class Env(Env_param):
-    def __init__(self, game_id, pHandle, wcHandle):
+    def __init__(self, env_num):
         super().__init__()
-        self.game_id = game_id    #使ってない
+        self.env_num = env_num
         
-        self.read_memory = ReadMemory(pHandle)
-        self.controller = Controller(wcHandle)
         
         self.controller.TrainingMode_enemy_activate()
         time.sleep(0.5)
         #self.reset()
 
+
+    def get_emmu_Handles(self):
+        """開いている全てのエミュのpHandle,wcHandleを求め、env_numに従って選ぶ"""
+        pids = windbg.get_pids('yuzu.exe')
+        pHandles = [windbg.get_pHandle(pid) for pid in pids]
+        # wHandleの取得　info=[ウィンドウ名,wHandle,pid]
+        infos_all = windbg.EnumWindows()
+        infos = [info for info in infos_all if 'yuzu ' in info[0]]  # ウィンドウ名先頭5文字でyuzuを特定
+        # wcHandleを取得し、pidでpHandleと対応づける
+        Handles = []
+        for wName,wHandle,pid in infos:
+            pHandle = pHandles[pids.index(pid)]
+            wcHandle = windbg.EnumChildWindows(wHandle)[3]  # yuzu1022:3
+            #wcHandle = windbg.EnumChildWindows(wHandle)[4]  # yuzu1268:4
+            windbg.SetWindowText(wHandle, wName + '__' + str(pids.index(pid)))
+            Handles.append((pHandle,wcHandle))
+        
+        pHandle, wcHandle = Handles[self.env_num]
+        self.read_memory = ReadMemory(pHandle)
+        self.controller = Controller(wcHandle)
+    
     
     def reset(self):
         self.controller.set_neutral()

@@ -6,7 +6,7 @@ Created on Fri Jun 24 16:46:16 2022
 """
 import struct, socket, threading, logging
 
-from env import Env, get_emmu_Handles
+from env import Env
 
 
 
@@ -49,16 +49,15 @@ class MySocket:
 
 
 
-def loop_handler(mysocket, Handles):
-    
+def loop_handler(mysocket):
     #　hostにenv_numを要求する
     mysocket.mysend_plus('req_env_num'.encode("UTF-8"))
     recv = mysocket.myrecv(1)
     env_num = int.from_bytes(recv, 'big')
     print(f'server {env_num}: connected')
     
-    pHandle, wcHandle = Handles[env_num]
-    myenv = Env(env_num, pHandle, wcHandle)
+    env = Env(env_num)
+    env.get_emmu_Handles()
     
     
     while True:
@@ -70,7 +69,7 @@ def loop_handler(mysocket, Handles):
             # step
             recv = mysocket.myrecv(1)
             action = int.from_bytes(recv, 'big')
-            observation, reward, done = myenv.step(action)
+            observation, reward, done = env.step(action)
             send = b''.join([
                 observation.tobytes(),
                 struct.pack('>f', reward),
@@ -79,16 +78,16 @@ def loop_handler(mysocket, Handles):
             mysocket.mysend(send)
         elif operator == 2:
             # legal actions
-            send = bytes(myenv.legal_actions())
+            send = bytes(env.legal_actions())
             mysocket.mysend_plus(send)
         elif operator == 3:
             # reset
-            observation = myenv.reset()
+            observation = env.reset()
             send = observation.tobytes()
             mysocket.mysend(send)
         elif operator == 4:
             # close
-            myenv.close()
+            env.close()
             mysocket.mysend_plus('closed'.encode("UTF-8"))
             print(f'server {env_num}: env close')
             break
@@ -123,7 +122,6 @@ if __name__ == '__main__':
     print('ready')
     
     # ホストにloop_handlerを割り当てる
-    Handles = get_emmu_Handles()    # マルチプロセスだとここで求めたpHandleは不正だがマルチスレッドなのでOK
     threads = []
     for _ in range(N):
         try:
@@ -137,7 +135,7 @@ if __name__ == '__main__':
         
         threads.append(threading.Thread(
             target=loop_handler,
-            args=(mysocket, Handles),
+            args=(mysocket,),
             daemon=True
             ))
         threads[-1].start()
