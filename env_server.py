@@ -7,7 +7,6 @@ Created on Fri Jun 24 16:46:16 2022
 import struct, socket, threading, logging
 
 from env import Env, get_emmu_Handles
-import windbg
 
 
 
@@ -52,22 +51,15 @@ class MySocket:
 
 def loop_handler(mysocket, Handles):
     
-    #　hostにgame_idを要求する
-    mysocket.mysend_plus('req_game_id'.encode("UTF-8"))
+    #　hostにenv_numを要求する
+    mysocket.mysend_plus('req_env_num'.encode("UTF-8"))
     recv = mysocket.myrecv(1)
-    game_id = int.from_bytes(recv, 'big')
-    print(f'server {game_id}: connected')
+    env_num = int.from_bytes(recv, 'big')
+    print(f'server {env_num}: connected')
     
-    pHandle, wcHandle = Handles[game_id]
-    myenv = Env(game_id, pHandle, wcHandle)
+    pHandle, wcHandle = Handles[env_num]
+    myenv = Env(env_num, pHandle, wcHandle)
     
-    # hostから要求を受けて、env_paramを返す
-    recv = mysocket.myrecv_plus()
-    assert recv.decode() == 'req_env_param'
-    send = bytes(myenv.observation_shape)
-    mysocket.mysend_plus(send)
-    send = bytes(myenv.action_shape)
-    mysocket.mysend_plus(send)
     
     while True:
         recv = mysocket.myrecv(1)
@@ -98,11 +90,11 @@ def loop_handler(mysocket, Handles):
             # close
             myenv.close()
             mysocket.mysend_plus('closed'.encode("UTF-8"))
-            print(f'server {game_id}: env close')
+            print(f'server {env_num}: env close')
             break
         
         else:
-            print(f'server {game_id}: unknown operator, {operator}')
+            print(f'server {env_num}: unknown operator, {operator}')
             break
     
     
@@ -131,7 +123,7 @@ if __name__ == '__main__':
     print('ready')
     
     # ホストにloop_handlerを割り当てる
-    Handles = get_emmu_Handles()
+    Handles = get_emmu_Handles()    # マルチプロセスだとここで求めたpHandleは不正だがマルチスレッドなのでOK
     threads = []
     for _ in range(N):
         try:

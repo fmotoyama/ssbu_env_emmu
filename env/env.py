@@ -26,7 +26,8 @@ def get_emmu_Handles():
     Handles = []
     for wName,wHandle,pid in infos:
         pHandle = pHandles[pids.index(pid)]
-        wcHandle = windbg.EnumChildWindows(wHandle)[4]  # yuzu1022:3, yuzu1268:4
+        wcHandle = windbg.EnumChildWindows(wHandle)[3]  # yuzu1022:3
+        #wcHandle = windbg.EnumChildWindows(wHandle)[4]  # yuzu1268:4
         windbg.SetWindowText(wHandle, wName + '__' + str(pids.index(pid)))
         Handles.append((pHandle,wcHandle))
     return Handles
