@@ -42,6 +42,7 @@ class Env_param:
         # [0,1]
         self.stick_shift = K.shift
         self.action_shape = (len(self.bottun_list),len(self.stick_list),2)
+        #!!!stepの方も書き換える
         """
         # [null,4方向]
         self.stick_list = [
@@ -110,13 +111,15 @@ class Env(Env_param):
         idxs = np.ravel(np.where(
             np.arange(np.prod(self.action_shape)).reshape(self.action_shape) == action
         ))
-        assert idxs.shape == (3,)
         #button_id = action // 18    # 行　0~6
         #stick_id = action % 18      # 列　0~17
         button_input = self.bottun_list[idxs[0]]
         stick_input = self.stick_list[idxs[1]]
+        """
+        assert idxs.shape == (3,)
         if idxs[2]:
             stick_input = stick_input + [self.stick_shift]  # +=で書くとstick_listに追加される
+        """
         
         press = stick_input + button_input
         release = list(self.pressed_stick - set(stick_input)) + list(self.pressed_button - set(button_input))
