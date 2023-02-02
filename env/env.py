@@ -33,6 +33,7 @@ class Env_param:
         
         # [null,A,B,X,R,ZL]
         self.bottun_list = [[], [K.A], [K.B], [K.X], [K.R], [K.ZL]]
+        """
         # [null,8方向]
         self.stick_list = [
             [],
@@ -40,20 +41,21 @@ class Env_param:
             ]
         # [0,1]
         self.stick_shift = K.shift
-        
         self.action_shape = (len(self.bottun_list),len(self.stick_list),2)
-
+        """
+        # [null,4方向]
+        self.stick_list = [
+            [],
+            [K.right],[K.up],[K.left],[K.down]
+            ]
+        self.action_shape = (len(self.bottun_list),len(self.stick_list))
+        #"""
 
 
 class Env(Env_param):
     def __init__(self, env_num):
         super().__init__()
         self.env_num = env_num
-        
-        
-        self.controller.TrainingMode_enemy_activate()
-        time.sleep(0.5)
-        #self.reset()
 
 
     def get_emmu_Handles(self):
@@ -75,6 +77,10 @@ class Env(Env_param):
         pHandle, wcHandle = Handles[self.env_num]
         self.read_memory = ReadMemory(pHandle)
         self.controller = Controller(wcHandle)
+        
+        # cupをアクティベート
+        self.controller.TrainingMode_enemy_activate()
+        time.sleep(0.5)
     
     
     def reset(self):
