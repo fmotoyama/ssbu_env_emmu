@@ -164,8 +164,9 @@ class Env(Env_param):
                       - (self.data[f'per{self.port}'] - self.per[self.port-1]))/200
             self.per = [self.data['per1'],self.data['per2']]
         done = bool(self.end)
+        info = {'frame':observation['frame']}
 
-        return observation, reward, done
+        return observation, reward, done, info
     
     def legal_actions(self):
         return list(range(np.prod(self.action_shape)))
@@ -203,6 +204,13 @@ class Env(Env_param):
             observation[int(port-1),7:] = variable
         
         return observation
+    
+    def confirm_delay():
+        """
+        ジャンプの入力から観測まで何Fかかるか計測する
+        踏み切りは全キャラ共通で3F
+        """
+        pass
 
 
 class Env_dummy(Env_param):

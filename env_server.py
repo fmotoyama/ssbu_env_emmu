@@ -69,11 +69,12 @@ def loop_handler(mysocket):
             # step
             recv = mysocket.myrecv(1)
             action = int.from_bytes(recv, 'big')
-            observation, reward, done = env.step(action)
+            observation, reward, done, info = env.step(action)
             send = b''.join([
                 observation.tobytes(),
                 struct.pack('>f', reward),
-                done.to_bytes(1,'big')
+                done.to_bytes(1,'big'),
+                info['frame'].to_bytes(4,'big')
                 ])
             mysocket.mysend(send)
         elif operator == 2:
