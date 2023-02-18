@@ -21,7 +21,7 @@ class Env_param:
         # 対戦カード
         self.player = ('11','23') #1p:ファルコン,2p:ガノン
         # 自分のポート番号 1か2しか使ってはいけない
-        self.port = 2
+        self.port = 1
         
         # モーションを表す変量
         self.motion_variables = utils.get_motion_variable(*self.player)        
@@ -92,22 +92,25 @@ class Env(Env_param):
         self.pressed_button = set()     # 0は入れない
         self.pressed_stick = set()
         
+        """
         while True:
             self.controller.TrainingMode_reset()
             time.sleep(0.2)
             data = self.read_memory.peek_collected_param()
             if data['per1'] == 0 and data['per2'] == 0:
                 break
+        """
+        observation = self.get_observation()
         
-        self.start_frame = data['frame']            # 対戦の開始F
+        self.start_frame = self.data['frame']            # 対戦の開始F
         # step()で更新
-        self.frame = data['frame']                  # 現在F
-        self.per = [data['per1'],data['per2']]      # 現在パーセント
+        self.frame = self.data['frame']                  # 現在F
+        self.per = [self.data['per1'],self.data['per2']]      # 現在パーセント
         # get_observation()で更新
         self.stock = [3,3]                          # 現在ストック
-        self.loss = [data['loss1'],data['loss2']]   # 総撃墜回数
+        self.loss = [self.data['loss1'],self.data['loss2']]   # 総撃墜回数
         self.end = 0                                # 終了判定 0/1/2 → 未決着/1p勝利/2p勝利
-        return self.get_observation()
+        return observation
     
     
     def step(self,action):
