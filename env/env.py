@@ -71,8 +71,11 @@ class Env(Env_param):
         pHandle, wcHandle = Handles[self.env_num]
         self.read_memory = ReadMemory(pHandle)
         self.controller = Controller(wcHandle)
-        
     
+    
+    def TrainingMode_reset(self):
+        self.controller.TrainingMode_reset()
+        
     def TrainingMode_enemy_activate(self):
         # cupを起動
         self.controller.TrainingMode_enemy_activate()
@@ -82,6 +85,7 @@ class Env(Env_param):
         # cupを停止
         self.controller.TrainingMode_enemy_deactivate()
         time.sleep(0.1)
+    
     
     def reset(self):
         self.controller.set_neutral()
