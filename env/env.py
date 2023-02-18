@@ -16,41 +16,34 @@ from .controller import KeyValue as K
 
 
 
-
-
-
 class Env_param:
     def __init__(self):
         # 対戦カード
         self.player = ('11','23') #1p:ファルコン,2p:ガノン
         # 自分のポート番号 1か2しか使ってはいけない
-        self.port = 1
+        self.port = 2
         
         # モーションを表す変量
         self.motion_variables = utils.get_motion_variable(*self.player)        
+        self.motion_variables_length = len(next(iter(self.motion_variables.values())))
         #環境データの形状 2player * [x座標,y座標,パーセント,シールド残量,ジャンプ残り回数,向き,無敵,モーション]
-        self.observation_shape = (2,7+len(next(iter(self.motion_variables.values()))))
+        self.observation_shape = (2,9+self.motion_variables_length)
         
         # [null,A,B,X,R,ZL]
-        self.bottun_list = [[], [K.A], [K.B], [K.X], [K.R], [K.ZL]]
-        """
-        # [null,8方向]
-        self.stick_list = [
-            [],
-            [K.right], [K.right,K.up],[K.up],[K.up,K.left],[K.left],[K.left,K.down],[K.down],[K.down,K.right]
-            ]
-        # [0,1]
-        self.stick_shift = K.shift
-        self.action_shape = (len(self.bottun_list),len(self.stick_list),2)
-        #!!!stepの方も書き換える
-        """
+        bottun_lists = {
+            1:[[], [K.A], [K.B], [K.X], [K.R], [K.ZL]],
+            2:[[], [K.A2], [K.B2], [K.X2], [K.R2], [K.ZL2]]
+            }
         # [null,4方向]
-        self.stick_list = [
-            [],
-            [K.right],[K.up],[K.left],[K.down]
-            ]
+        stick_lists = {
+            1: [[],[K.right],[K.up],[K.left],[K.down]],
+            2: [[],[K.right2],[K.up2],[K.left2],[K.down2]]
+            }
+        
+        self.bottun_list = bottun_lists[self.port]
+        self.stick_list = stick_lists[self.port]
         self.action_shape = (len(self.bottun_list),len(self.stick_list))
-        #"""
+        
 
 
 class Env(Env_param):
@@ -79,10 +72,16 @@ class Env(Env_param):
         self.read_memory = ReadMemory(pHandle)
         self.controller = Controller(wcHandle)
         
-        # cupをアクティベート
+    
+    def TrainingMode_enemy_activate(self):
+        # cupを起動
         self.controller.TrainingMode_enemy_activate()
         time.sleep(0.5)
     
+    def TrainingMode_enemy_deactivate(self):
+        # cupを停止
+        self.controller.TrainingMode_enemy_deactivate()
+        time.sleep(0.1)
     
     def reset(self):
         self.controller.set_neutral()
@@ -122,7 +121,8 @@ class Env(Env_param):
         """
         
         press = stick_input + button_input
-        release = list(self.pressed_stick - set(stick_input)) + list(self.pressed_button - set(button_input))
+        release = list(self.pressed_stick - set(stick_input)) + \
+                  list(self.pressed_button - set(button_input))
         self.pressed_stick = set(stick_input)
         self.pressed_button = set(button_input)
         for value in release:
@@ -157,14 +157,14 @@ class Env(Env_param):
         if self.port == 2:
             observation = np.flipud(observation)
         if self.end:
-            reward = 1 if self.end == self.port else -1
+            reward = 1 if self.end == self.port else -1*0.5
         else:
-            #(与えたダメージ-受けたダメージ)/200の報酬
+            #(与えたダメージ-受けたダメージ)/100の報酬
             reward = ((self.data[f'per{3-self.port}'] - self.per[2-self.port])
-                      - (self.data[f'per{self.port}'] - self.per[self.port-1]))/200
+                      - (self.data[f'per{self.port}'] - self.per[self.port-1])*0.5)/100
             self.per = [self.data['per1'],self.data['per2']]
         done = bool(self.end)
-        info = {'frame':observation['frame']}
+        info = {'frame': self.data['frame']}
 
         return observation, reward, done, info
     
@@ -174,8 +174,6 @@ class Env(Env_param):
     def close(self):
         time.sleep(0.1)
         self.controller.set_neutral()
-        time.sleep(0.1)
-        self.controller.TrainingMode_enemy_deactivate()
         self.reset()
         del self.read_memory, self.controller
 
@@ -189,23 +187,27 @@ class Env(Env_param):
         
         observation = np.zeros(self.observation_shape, dtype = 'f4')
         for port in [1,2]:
-            variable = self.motion_variables.get(self.data[f'motionID{port}'])
-            if variable == None:
-                variable = np.zeros(12)
-            observation[port-1,:7] = [
+            x_dis = self.data[f'posx{3-port}']-self.data[f'posx{port}']
+            y_dis = self.data[f'posy{3-port}']-self.data[f'posy{port}']
+            observation[port-1,:9] = [
                 self.data[f'posx{port}']/200,
                 self.data[f'posy{port}']/200,
                 self.data[f'per{port}']/100,
                 self.data[f'shield_remain{port}']/50,
                 self.data[f'jmp_remain{port}']/2,
                 self.data[f'dir{port}'],
-                not (self.data[f'invincible{port}'] in [7,13]),    # 無敵フラグ
+                self.data[f'invincible{port}'] not in [7,13],    # 無敵フラグ
+                np.sqrt(x_dis**2 + y_dis**2)/200,
+                np.degrees(np.arctan2(x_dis, y_dis))/180 #上が0,下が±180
                 ]
-            observation[int(port-1),7:] = variable
+            variable = self.motion_variables.get(self.data[f'motionID{port}'])
+            if variable == None:
+                variable = np.zeros(self.motion_variables_length)
+            observation[port-1,9:] = variable
         
         return observation
     
-    def confirm_delay():
+    def get_delay():
         """
         ジャンプの入力から観測まで何Fかかるか計測する
         踏み切りは全キャラ共通で3F

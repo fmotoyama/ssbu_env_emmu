@@ -7,25 +7,37 @@ Created on Sat May 21 19:32:52 2022
 import win32api, win32con
 import time
 
-from . import windbg
+
 
 class KeyValue:
     N       = 0,
-    #Button
+    # 1p
     A       = ord('C')  #通常攻撃（ホールドあり）
     B       = ord('X')  #必殺攻撃
     X       = ord('V')  #ジャンプ1
-    Y       = ord('Z')  #ジャンプ2
-    R       = ord('R')  #ガード（ホールドあり）
-    ZL      = ord('Q')  #つかみ1
-    ZR      = ord('E')  #つかみ2
+    #Y       = ord('Z')  #ジャンプ2
+    R       = ord('E')  #つかみ1
+    L       = ord('Q')  #つかみ2
+    ZL      = ord('R')  #ガード（ホールドあり）
     PLUS    = ord('M')
-    #Stick
+    
     right   = ord('D')
     up      = ord('W')
     left    = ord('A')
     down    = ord('S')
-    shift   = 0x10
+    #shift   = 0x10
+    
+    
+    # 2p
+    A2      = ord('0')
+    B2      = ord('1')
+    X2      = ord('2')
+    R2      = ord('3')
+    ZL2     = ord('4')
+    right2  = ord('5')
+    up2     = ord('6')
+    left2   = ord('7')
+    down2   = ord('8')
         
 
 
@@ -58,7 +70,7 @@ class Controller:
             self.keyRelease(key)
     
     def TrainingMode_reset(self):
-        values = [KeyValue.A, KeyValue.ZL, KeyValue.ZR]
+        values = [KeyValue.A, KeyValue.L, KeyValue.R]
         for value in values:
             self.keyPress(value)
         time.sleep(2/60)
@@ -88,6 +100,7 @@ class Controller:
 
 
 if __name__ == "__main__":
+    import windbg
     
     infos_all = windbg.EnumWindows()  
     infos = [info for info in infos_all if info[0][:5] == 'yuzu ']
