@@ -4,7 +4,7 @@ Created on Tue May 24 16:15:17 2022
 
 @author: f.motoyama
 """
-import time
+import time, math
 import numpy as np
 
 #import os, sys
@@ -17,11 +17,11 @@ from .controller import KeyValue as K
 
 
 class Env_param:
-    def __init__(self):
+    def __init__(self,port=1):
         # 対戦カード
         self.player = ('11','23') #1p:ファルコン,2p:ガノン
         # 自分のポート番号 1か2しか使ってはいけない
-        self.port = 1
+        self.port = port
         
         # モーションを表す変量
         self.motion_variables = utils.get_motion_variable(*self.player)        
@@ -44,11 +44,20 @@ class Env_param:
         self.stick_list = stick_lists[self.port]
         self.action_shape = (len(self.bottun_list),len(self.stick_list))
         
+        # 報酬計算に用いる
+        # xダメージを与えるまでの累積報酬 = ∫_0^x e^(-x) dx = 1 - e^(-x)
+        self.reward_max = 1
+        self.opponent_scale = 0.5       # 自分への罰則（敵への報酬）のスケーリング
+        per_reward_max = 0.75           # 無限%まで蓄積したときの累積報酬
+        per_reward_100 = 0.75 * 0.99    # 100%まで蓄積したときの累積報酬
+        scale1 = per_reward_max
+        scale2 = math.log(1 - per_reward_100/(per_reward_max)) / -100
+        self.per_reward_func = lambda per_prev, per_curr: scale1*(math.e**(-scale2*per_prev) - math.e**(-scale2*per_curr))
 
 
 class Env(Env_param):
-    def __init__(self, env_num):
-        super().__init__()
+    def __init__(self, env_num, port=1):
+        super().__init__(port)
         self.env_num = env_num
 
 
@@ -88,28 +97,20 @@ class Env(Env_param):
     
     
     def reset(self):
+        # スティックを戻し、変数を初期化
         self.controller.set_neutral()
         self.pressed_button = set()     # 0は入れない
         self.pressed_stick = set()
         
-        """
-        while True:
-            self.controller.TrainingMode_reset()
-            time.sleep(0.2)
-            data = self.read_memory.peek_collected_param()
-            if data['per1'] == 0 and data['per2'] == 0:
-                break
-        """
         observation = self.get_observation()
         
-        self.start_frame = self.data['frame']            # 対戦の開始F
-        # step()で更新
-        self.frame = self.data['frame']                  # 現在F
-        self.per = [self.data['per1'],self.data['per2']]      # 現在パーセント
-        # get_observation()で更新
-        self.stock = [3,3]                          # 現在ストック
-        self.loss = [self.data['loss1'],self.data['loss2']]   # 総撃墜回数
-        self.end = 0                                # 終了判定 0/1/2 → 未決着/1p勝利/2p勝利
+        self.start_frame = self.data['frame']               # 対戦の開始F
+        # 以下はstep()で更新される
+        self.frame = self.data['frame']                     # 現在F
+        self.per = [self.data['per1'],self.data['per2']]    # 現在パーセント
+        self.stock = [3,3]                                  # 現在ストック
+        self.loss = [self.data['loss1'],self.data['loss2']] # 総撃墜回数
+        self.end = 0                                        # 終了判定 0/1/2 → 未決着/1p勝利/2p勝利
         return observation
     
     
@@ -163,24 +164,48 @@ class Env(Env_param):
         # actorに送るデータをまとめる　以下のデータは自分（self.port）が基準
         if self.port == 2:
             observation = np.flipud(observation)
-        if self.end:
-            reward = 1 if self.end == self.port else -1*0.5
-        else:
-            #(与えたダメージ-受けたダメージ)/100の報酬
-            reward = ((self.data[f'per{3-self.port}'] - self.per[2-self.port])
-                      - (self.data[f'per{self.port}'] - self.per[self.port-1])*0.5)/100
-            self.per = [self.data['per1'],self.data['per2']]
+        
+        reward = self.calc_reward()
+        self.per = [self.data['per1'],self.data['per2']]
+        
         done = bool(self.end)
-        info = {'frame': self.data['frame']}
+        
+        # win = -1/0/1: 負け/未決着/勝ち
+        if self.end:
+            win = 1 if self.end == self.port else -1
+        else:
+            win = 0
+        
+        info = {'frame': self.data['frame'], 'win': win}
 
         return observation, reward, done, info
+    
+    
+    def calc_reward(self):
+        """
+        port,end,per1/2から報酬を計算
+        ダメージを与えると報酬がもらえるが、撃墜するまでにもらえる合計報酬は変わらない
+        """
+        per_prev = self.per
+        per_curr = [self.data['per1'],self.data['per2']]
+        if self.end:
+            # end = 1/2
+            reward = self.reward_max - self.per_reward_func(0, per_curr[self.end-1])
+            if self.end != self.port:
+                reward = reward * -self.opponent_scale
+        else:
+            #(与えたダメージ-受けたダメージ)に応じた報酬
+            reward = self.per_reward_func(per_prev[2-self.port], per_curr[2-self.port]) \
+                     - self.per_reward_func(per_prev[self.port-1], per_curr[self.port-1]) * self.opponent_scale
+        return reward
+        
+        
     
     def legal_actions(self):
         return list(range(np.prod(self.action_shape)))
     
     def close(self):
         time.sleep(0.1)
-        self.controller.set_neutral()
         self.reset()
         del self.read_memory, self.controller
 
