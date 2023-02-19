@@ -190,7 +190,7 @@ class Env(Env_param):
         per_curr = [self.data['per1'],self.data['per2']]
         if self.end:
             # end = 1/2
-            reward = self.reward_max - self.per_reward_func(0, per_curr[self.end-1])
+            reward = self.reward_max - self.per_reward_func(0, per_curr[2-self.end])
             if self.end != self.port:
                 reward = reward * -self.opponent_scale
         else:
