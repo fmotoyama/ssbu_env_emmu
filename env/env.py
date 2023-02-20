@@ -50,9 +50,11 @@ class Env_param:
         self.opponent_scale = 0.5       # 自分への罰則（敵への報酬）のスケーリング
         per_reward_max = 0.75           # 無限%まで蓄積したときの累積報酬
         per_reward_100 = 0.75 * 0.99    # 100%まで蓄積したときの累積報酬
-        scale1 = per_reward_max
-        scale2 = math.log(1 - per_reward_100/(per_reward_max)) / -100
-        self.per_reward_func = lambda per_prev, per_curr: scale1*(math.e**(-scale2*per_prev) - math.e**(-scale2*per_curr))
+        self.scale1 = per_reward_max
+        self.scale2 = math.log(1 - per_reward_100/(per_reward_max)) / -100
+    
+    def per_reward_func(self, per_prev, per_curr):
+        return self.scale1*(math.e**(-self.scale2*per_prev) - math.e**(-self.scale2*per_curr))
 
 
 class Env(Env_param):
@@ -190,7 +192,7 @@ class Env(Env_param):
         per_curr = [self.data['per1'],self.data['per2']]
         if self.end:
             # end = 1/2
-            reward = self.reward_max - self.per_reward_func(0, per_curr[2-self.end])
+            reward = self.reward_max - self.per_reward_func(0, per_prev[2-self.end])
             if self.end != self.port:
                 reward = reward * -self.opponent_scale
         else:
