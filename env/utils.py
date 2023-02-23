@@ -63,7 +63,7 @@ def yuzu_name_reset():
     infos = [info for info in infos_all if 'yuzu ' in info[0]]  #ウィンドウ名先頭5文字でyuzuを特定
     for info in infos:
         wName, wHandle, _ = info
-        m = re.search('__(\d+)$', wName)
+        m = re.search(r'__(\d+)$', wName)
         if m:
             windbg.SetWindowText(wHandle, wName[:m.start()])
 

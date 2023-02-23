@@ -76,10 +76,10 @@ class Env(Env_param):
             pHandle = pHandles[pids.index(pid)]
             wcHandle = windbg.EnumChildWindows(wHandle)[3]  # yuzu1022:3
             #wcHandle = windbg.EnumChildWindows(wHandle)[4]  # yuzu1268:4
-            windbg.SetWindowText(wHandle, wName + '__' + str(pids.index(pid)))
-            Handles.append((pHandle,wcHandle))
+            Handles.append((pHandle,wcHandle,wHandle))
         
-        pHandle, wcHandle = Handles[self.env_num]
+        pHandle, wcHandle, wHandle = Handles[self.env_num]
+        windbg.SetWindowText(wHandle, wName + '__' + str(pids.index(pid)))
         self.read_memory = ReadMemory(pHandle)
         self.controller = Controller(wcHandle)
     
