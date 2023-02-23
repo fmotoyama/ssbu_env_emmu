@@ -4,10 +4,10 @@ Created on Fri Nov 11 12:44:48 2022
 
 @author: f.motoyama
 """
-import os
+import os, re
 import pandas as pd
 
-
+import windbg
 
 
 def get_label(name1:str,name2:str):
@@ -57,6 +57,15 @@ def get_motion_variable(name1:str,name2:str):
     return motion_variable
     
 
+def yuzu_name_reset():
+    """yuzuのウィンドウ名に割り振ったidを削除する"""
+    infos_all = windbg.EnumWindows()    #info = [wName,wHandle,pid]
+    infos = [info for info in infos_all if 'yuzu ' in info[0]]  #ウィンドウ名先頭5文字でyuzuを特定
+    for info in infos:
+        wName, wHandle, _ = info
+        m = re.search('__(\d+)$', wName)
+        if m:
+            windbg.SetWindowText(wHandle, wName[:m.start()])
 
 if __name__ == '__main__':
     player = ('11','23')

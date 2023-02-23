@@ -209,6 +209,7 @@ class Env(Env_param):
     def close(self):
         time.sleep(0.1)
         self.reset()
+        utils.yuzu_name_reset()
         del self.read_memory, self.controller
 
 
