@@ -150,7 +150,8 @@ class Env(Env_param):
         self.frame = self.data['frame']
         
         # 終了判定 0/1/2 → 未決着/1p勝利/2p勝利
-        if self.loss[0] + 1 == self.data['loss1']:
+        if self.loss[0] + 1 == self.data['loss1'] \
+           or (self.data['per1'] == 0 and self.per[0] != 0):
             # 1pの死亡回数が増えていた場合
             self.end = 2
             self.loss[0] += 1
@@ -170,10 +171,13 @@ class Env(Env_param):
         """
         1p側はストックが減るのとpercentが0になるのが同時
         2p側はストックが減ってからpercentが減る
+        1p側は、perが溜まっている状態から0に遷移したとき負け扱いにする
+        !!!回復で不具合
+        !!!後の遷移を見ると2回負け扱いになる危険性
         """
+            
         reward = self.calc_reward()
-        if not self.end:
-            self.per = [self.data['per1'],self.data['per2']]
+        self.per = [self.data['per1'],self.data['per2']]
         
         done = bool(self.end)
         
