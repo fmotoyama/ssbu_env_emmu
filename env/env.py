@@ -167,8 +167,13 @@ class Env(Env_param):
         if self.port == 2:
             observation = np.flipud(observation)
         
+        """
+        1p側はストックが減るのとpercentが0になるのが同時
+        2p側はストックが減ってからpercentが減る
+        """
         reward = self.calc_reward()
-        self.per = [self.data['per1'],self.data['per2']]
+        if not self.end:
+            self.per = [self.data['per1'],self.data['per2']]
         
         done = bool(self.end)
         

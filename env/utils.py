@@ -7,7 +7,7 @@ Created on Fri Nov 11 12:44:48 2022
 import os, re
 import pandas as pd
 
-import windbg
+from . import windbg
 
 
 def get_label(name1:str,name2:str):
