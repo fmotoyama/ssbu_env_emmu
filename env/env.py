@@ -79,7 +79,7 @@ class Env(Env_param):
             Handles.append((pHandle,wcHandle,wHandle))
         
         pHandle, wcHandle, wHandle = Handles[self.env_num]
-        windbg.SetWindowText(wHandle, wName + '__' + str(pids.index(pid)))
+        windbg.SetWindowText(wHandle, wName + '__' + str(self.env_num))
         self.read_memory = ReadMemory(pHandle)
         self.controller = Controller(wcHandle)
     
