@@ -47,9 +47,9 @@ class Env_param:
         # 報酬計算に用いる
         # xダメージを与えるまでの累積報酬 = ∫_0^x e^(-x) dx = 1 - e^(-x)
         self.reward_max = 1
-        self.opponent_scale = 0.5       # 自分への罰則（敵への報酬）のスケーリング
-        per_reward_max = 0.75           # 無限%まで蓄積したときの累積報酬
-        per_reward_100 = 0.75 * 0.99    # 100%まで蓄積したときの累積報酬
+        self.opponent_scale = 1       # 自分への罰則（敵への報酬）のスケーリング
+        per_reward_max = 0.3           # 無限%まで蓄積したときの累積報酬
+        per_reward_100 = 0.3 * 0.99    # 100%まで蓄積したときの累積報酬
         self.scale1 = per_reward_max
         self.scale2 = math.log(1 - per_reward_100/(per_reward_max)) / -100
     
