@@ -31,8 +31,8 @@ class Env_param:
         
         # [null,A,B,X,R,ZL]
         bottun_lists = {
-            1:[[], [K.A], [K.B], [K.X], [K.R], [K.ZL]],
-            2:[[], [K.A2], [K.B2], [K.X2], [K.R2], [K.ZL2]]
+            1: [[], [K.A], [K.B], [K.X], [K.R], [K.ZL]],
+            2: [[], [K.A2], [K.B2], [K.X2], [K.R2], [K.ZL2]]
             }
         # [null,4方向]
         stick_lists = {
@@ -47,14 +47,15 @@ class Env_param:
         # 報酬計算に用いる
         # xダメージを与えるまでの累積報酬 = ∫_0^x e^(-x) dx = 1 - e^(-x)
         self.reward_max = 1
-        self.opponent_scale = 1       # 自分への罰則（敵への報酬）のスケーリング
-        per_reward_max = 0.3           # 無限%まで蓄積したときの累積報酬
-        per_reward_100 = 0.3 * 0.99    # 100%まで蓄積したときの累積報酬
+        self.opponent_scale = 1         # 自分への罰則（敵への報酬）のスケーリング
+        per_reward_max = 0.3            # 無限%まで蓄積したときの累積報酬
+        per_reward_100 = 0.3 * 0.99     # 100%まで蓄積したときの累積報酬
         self.scale1 = per_reward_max
         self.scale2 = math.log(1 - per_reward_100/(per_reward_max)) / -100
     
     def per_reward_func(self, per_prev, per_curr):
         return self.scale1*(math.e**(-self.scale2*per_prev) - math.e**(-self.scale2*per_curr))
+
 
 
 class Env(Env_param):
