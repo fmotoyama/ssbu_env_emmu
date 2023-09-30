@@ -50,7 +50,7 @@ if __name__ == '__main__':
         
         #a = e.legal_actions()
         action = random.choice(e.legal_actions())
-        #action = 0
+        action = 0
         observation, reward, done, _ = e.step(action)
         
         #print(f'\rgap:{str(gap).rjust(5)}, reward:{str(round(reward, 5)).rjust(10)}',end = '')

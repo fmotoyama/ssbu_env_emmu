@@ -23,11 +23,14 @@ class Env_param:
         # 自分のポート番号 1か2しか使ってはいけない
         self.port = port
         
+        # モーション以外の変量数 [x座標,y座標,パーセント,シールド残量,ジャンプ残り回数,向き,無敵]
+        self.observation_length1 = 7
         # モーションを表す変量
-        self.motion_variables = utils.get_motion_variable(*self.player)        
-        self.motion_variables_length = len(next(iter(self.motion_variables.values())))
-        #環境データの形状 2player * [x座標,y座標,パーセント,シールド残量,ジャンプ残り回数,向き,無敵,モーション]
-        self.observation_shape = (2,9+self.motion_variables_length)
+        self.motion_variables = utils.get_motion_variable2(*self.player)
+        self.observation_length2 = max(self.motion_variables.values())+1
+        
+        # +2 は自機から相手への(距離,角度)
+        self.observation_shape = (2,self.observation_length1 + 2 + self.observation_length2)
         
         # [null,A,B,X,R,ZL]
         bottun_lists = {
@@ -143,6 +146,7 @@ class Env(Env_param):
         
         
         # 環境の取得 !!!actionが実行された後かはわからない
+        # !!!obsはポート番号順ではなく自機基準なのでなるべくこのメソッド内で使わない
         observation = self.get_observation()
         # フレームが前stepから変化していないとき、待機
         if self.frame == self.data['frame']:
@@ -165,9 +169,6 @@ class Env(Env_param):
         else:
             self.end = 0
         
-        # actorに送るデータをまとめる　以下のデータは自分（self.port）が基準
-        if self.port == 2:
-            observation = np.flipud(observation)
         
         """
         1p側はストックが減るのとpercentが0になるのが同時
@@ -184,7 +185,7 @@ class Env(Env_param):
         
         # win = -1/0/1: 負け/未決着/勝ち
         if self.end:
-            win = 1 if self.end == self.port else -1
+            win = 1 if self.end==self.port else -1
         else:
             win = 0
         
@@ -221,20 +222,20 @@ class Env(Env_param):
         self.reset()
         utils.yuzu_name_reset()
         del self.read_memory, self.controller
-
+    
 
     def get_observation(self):
         """
-        observation[port1/port2] = [x座標,y座標,パーセント,シールド残量,ジャンプ残り回数,向き,無敵,モーション]
+        observation = [(x座標,y座標,パーセント,シールド残量,ジャンプ残り回数,向き,無敵)*2,距離,角度,モーション]
         (敵ベクトル,崖ベクトル1,崖ベクトル2,技hitフラグ)
         """
         self.data = self.read_memory.peek_collected_param()
         
         observation = np.zeros(self.observation_shape, dtype = 'f4')
-        for port in [1,2]:
+        for i,port in enumerate([self.port, 3-self.port]):
             x_dis = self.data[f'posx{3-port}']-self.data[f'posx{port}']
             y_dis = self.data[f'posy{3-port}']-self.data[f'posy{port}']
-            observation[port-1,:9] = [
+            observation[i,:self.observation_length1+2] = [
                 self.data[f'posx{port}']/200,
                 self.data[f'posy{port}']/200,
                 self.data[f'per{port}']/100,
@@ -245,12 +246,13 @@ class Env(Env_param):
                 np.sqrt(x_dis**2 + y_dis**2)/200,
                 np.degrees(np.arctan2(x_dis, y_dis))/180 #上が0,下が±180
                 ]
+        
             variable = self.motion_variables.get(self.data[f'motionID{port}'])
-            if variable == None:
-                variable = np.zeros(self.motion_variables_length)
-            observation[port-1,9:] = variable
+            if variable is not None:
+                observation[i,self.observation_length1+2+variable] = 1
         
         return observation
+    
     
     def get_delay():
         """

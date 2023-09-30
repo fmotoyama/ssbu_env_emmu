@@ -57,6 +57,26 @@ def get_motion_variable(name1:str,name2:str):
     return motion_variable
     
 
+def get_motion_variable2(name1:str,name2:str):
+    """
+    motion_variableの辞書を返す
+    ワンホットエンコーディング
+    """
+    base = os.path.dirname(os.path.abspath(__file__))
+    name = os.path.normpath(os.path.join(base, r'..\label.csv'))
+    df = pd.read_csv(name, encoding="SHIFT-JIS", dtype = 'object')
+    motion_variable = {}
+    for name in ['0',name1,name2]:
+        df_temp = df[[name, name+'button', name+'stick', name+'situation']].dropna(how='any')
+        for _,ID,button,stick,situation in df_temp.itertuples(name=None):
+            motion_variable[int(ID, 16)] = (button,stick,situation)
+    # motion_variableのvalueを0からの番号にする
+    converter = list(set(motion_variable.values()))
+    motion_variable = {k: converter.index(v) for k,v in motion_variable.items()}
+    
+    return motion_variable
+
+
 def yuzu_name_reset():
     """yuzuのウィンドウ名に割り振ったidを削除する"""
     infos_all = windbg.EnumWindows()    #info = [wName,wHandle,pid]
@@ -71,7 +91,9 @@ if __name__ == '__main__':
     player = ('11','23')
     label = get_label(*player)
     motion_variable = get_motion_variable(*player)
+    motion_variable2 = get_motion_variable2(*player)
     a = len(next(iter(motion_variable.values())))
+    a2 = max(motion_variable2.values())
 
 
     
